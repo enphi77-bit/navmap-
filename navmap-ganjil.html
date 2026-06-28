@@ -192,6 +192,81 @@
     .nim-badge { text-align:center; padding: 0 0 18px; color: rgba(255,255,255,.15); font-size: 11px; letter-spacing: 1px; }
     .nim-badge b { color: rgba(59,158,255,.4); }
 
+    /* ─── Virtual Joystick ───────────────────────────────── */
+    #joystick-panel {
+      display: none;
+      position: fixed; bottom: 24px; right: 16px;
+      z-index: 9000;
+      background: rgba(11,15,30,.92);
+      border: 1px solid rgba(59,158,255,.35);
+      border-radius: 20px;
+      padding: 14px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.6);
+      user-select: none;
+    }
+    #joystick-panel.aktif { display: block; }
+    #joystick-label {
+      text-align: center; font-size: 11px; color: rgba(255,255,255,.4);
+      letter-spacing: .8px; text-transform: uppercase; margin-bottom: 10px;
+    }
+    #joystick-zone {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: rgba(59,158,255,.06);
+      border: 2px solid rgba(59,158,255,.25);
+      position: relative; margin: 0 auto;
+      touch-action: none;
+    }
+    #joystick-knob {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg,#3b9eff,#005fcc);
+      box-shadow: 0 4px 16px rgba(59,158,255,.5);
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      transition: none;
+      cursor: grab;
+    }
+    #joystick-knob:active { cursor: grabbing; }
+    .joy-dpad {
+      display: grid; grid-template-columns: repeat(3, 36px);
+      grid-template-rows: repeat(3, 36px);
+      gap: 4px; margin: 10px auto 0; width: fit-content;
+    }
+    .joy-btn {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(59,158,255,.12);
+      border: 1px solid rgba(59,158,255,.3);
+      color: #3b9eff; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: background .1s;
+    }
+    .joy-btn:active, .joy-btn.pressed { background: rgba(59,158,255,.4); }
+    .joy-btn.empty { background: transparent; border: none; cursor: default; }
+    #joy-speed-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 10px; font-size: 11px; color: rgba(255,255,255,.4);
+    }
+    #joy-speed { flex: 1; accent-color: #3b9eff; }
+    #joy-speed-val { color: #3b9eff; font-weight: 700; min-width: 36px; text-align:right; }
+    #btn-joy-toggle {
+      position: fixed; bottom: 24px; left: 16px;
+      z-index: 9001;
+      padding: 11px 16px; border-radius: 13px; font-size: 13px; font-weight: 700;
+      background: rgba(59,158,255,.15);
+      border: 1px solid rgba(59,158,255,.4);
+      color: #3b9eff; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+      transition: background .15s;
+    }
+    #btn-joy-toggle.aktif {
+      background: rgba(59,158,255,.3);
+      color: #fff;
+    }
+
     /* ─── Bearing strip ──────────────────────────────────── */
     .bearing-strip {
       display: none;
@@ -261,6 +336,55 @@
       color: #fff; font-weight: 700; font-size: 14px;
       border: none; border-radius: 13px; cursor: pointer;
     }
+    /* ─── Bookmark ──────────────────────────────────────── */
+    #bm-panel {
+      margin: 0 14px 10px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,180,0,.2);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    #bm-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; cursor: pointer;
+      font-size: 12px; color: rgba(255,180,0,.8);
+      letter-spacing: .5px; font-weight: 700;
+    }
+    #bm-header:active { background: rgba(255,180,0,.05); }
+    #bm-body { display: none; padding: 0 10px 10px; }
+    #bm-body.open { display: block; }
+    #bm-list { margin-bottom: 8px; }
+    .bm-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,.05);
+      font-size: 13px; color: rgba(255,255,255,.75);
+    }
+    .bm-item:last-child { border-bottom: none; }
+    .bm-name { flex: 1; cursor: pointer; }
+    .bm-name:hover { color: #ffb400; }
+    .bm-del {
+      font-size: 15px; cursor: pointer; color: rgba(255,100,100,.5);
+      padding: 2px 5px; border-radius: 6px;
+      transition: color .15s;
+    }
+    .bm-del:hover { color: #ff6464; }
+    .bm-empty { color: rgba(255,255,255,.25); font-size: 12px; padding: 6px 6px 2px; }
+    .bm-add-row { display: flex; gap: 6px; }
+    .bm-inp {
+      flex: 1; padding: 8px 10px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,180,0,.2);
+      border-radius: 9px; color: #fff; font-size: 13px; outline: none;
+    }
+    .bm-inp:focus { border-color: #ffb400; }
+    .bm-inp::placeholder { color: rgba(255,255,255,.25); }
+    .bm-save {
+      padding: 8px 12px; border-radius: 9px; font-size: 13px; font-weight: 700;
+      background: rgba(255,180,0,.15); border: 1px solid rgba(255,180,0,.35);
+      color: #ffb400; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bm-save:active { background: rgba(255,180,0,.3); }
   </style>
 </head>
 <body>
@@ -303,8 +427,21 @@
           <button class="btn-icon btn-reset" onclick="resetSemua()" title="Reset">🔄</button>
         </div>
 
-        <!-- Tombol Download Map — muncul setelah rute ditemukan -->
-        <div id="dlRow" style="display:none; margin: 0 14px 10px;">
+        <!-- Bookmark Panel -->
+        <div id="bm-panel">
+          <div id="bm-header" onclick="toggleBmPanel()">
+            ⭐ Bookmark Lokasi <span id="bm-chevron">▼</span>
+          </div>
+          <div id="bm-body">
+            <div id="bm-list"></div>
+            <div class="bm-add-row">
+              <input id="bm-inp" class="bm-inp" type="text" placeholder="Nama bookmark (pakai tujuan saat ini)" autocomplete="off"/>
+              <button class="bm-save" onclick="simpanBookmark()">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Download Map — muncul setelah rute ditemukan -->        <div id="dlRow" style="display:none; margin: 0 14px 10px;">
           <button class="btn-primary" id="btnDl" onclick="downloadMapArea()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
             ⬇️ Download Map Area Rute
           </button>
@@ -337,7 +474,7 @@
         <div class="prox-strip" id="proxStrip"></div>
 
         <!-- Bearing strip -->
-        <div class="bearing-strip" id="bearingStrip" style="display:none">
+        <div class="bearing-strip" id="bearingStrip">
           <span class="bearing-compass" id="bearingArrow">🧭</span>
           <div>
             <div><span class="bearing-val" id="bearingDeg">0°</span></div>
@@ -346,7 +483,7 @@
         </div>
 
         <!-- Tracking bar -->
-        <div class="track-bar" id="trackBar" style="display:none">
+        <div class="track-bar" id="trackBar">
           <button class="btn-track btn-track-start" id="btnTrackStart" onclick="mulaiTracking()">▶ Mulai</button>
           <button class="btn-track btn-track-stop"  id="btnTrackStop"  onclick="selesaiTracking()" style="display:none">■ Selesai</button>
           <span class="track-timer" id="trackTimer">00:00:00</span>
@@ -354,6 +491,9 @@
 
         <!-- MAP -->
         <div id="map"></div>
+        <div style="text-align:center; font-size:11px; color:rgba(255,255,255,.25); margin: -8px 0 10px;">
+          👆 Tap peta untuk pilih tujuan
+        </div>
 
         <div class="nim-badge">NIM <b>GANJIL</b> • Offline Tracking • Bearing + Statistik</div>
       </div>
@@ -375,6 +515,37 @@
 </div>
 
 <div class="toast-box" id="toast"></div>
+
+<!-- ════ Tombol toggle joystick ════ -->
+<button id="btn-joy-toggle" onclick="toggleJoystick()">🕹️ GPS Sim</button>
+
+<!-- ════ Panel Joystick Virtual ════ -->
+<div id="joystick-panel">
+  <div id="joystick-label">🕹️ GPS Virtual</div>
+
+  <!-- Analog joystick zone -->
+  <div id="joystick-zone">
+    <div id="joystick-knob"></div>
+  </div>
+
+  <!-- D-Pad (fallback / presisi) -->
+  <div class="joy-dpad">
+    <div class="joy-btn empty"></div>
+    <div class="joy-btn" id="joy-u" title="Utara">↑</div>
+    <div class="joy-btn empty"></div>
+    <div class="joy-btn" id="joy-l" title="Barat">←</div>
+    <div class="joy-btn empty" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;"></div>
+    <div class="joy-btn" id="joy-r" title="Timur">→</div>
+    <div class="joy-btn empty"></div>
+    <div class="joy-btn" id="joy-d" title="Selatan">↓</div>
+    <div class="joy-btn empty"></div>
+  </div>
+
+  <!-- Kecepatan gerakan -->
+  <div id="joy-speed-row">
+    🐢 <input type="range" id="joy-speed" min="1" max="10" value="3"> <span id="joy-speed-val">3m/s</span>
+  </div>
+</div>
 
 
 <!-- ════════════════════════════════════════════
@@ -445,6 +616,50 @@ updateOnlineStatus();
 L.control.attribution({ prefix: '© OpenStreetMap · CartoDB' }).addTo(map);
 
 /* ═══════════════════════════════════════════════════════════════
+   TAP MAP — klik peta untuk pilih tujuan
+═══════════════════════════════════════════════════════════════ */
+let tapMarker = null;
+
+map.on('click', async function(e) {
+  const { lat, lng } = e.latlng;
+
+  /* Hapus marker tap lama */
+  if (tapMarker) { map.removeLayer(tapMarker); tapMarker = null; }
+
+  /* Marker titik yang diklik */
+  const mkTap = L.divIcon({
+    html: `<div style="width:13px;height:13px;border-radius:50%;background:#ff6b6b;border:3px solid #fff;box-shadow:0 0 10px #ff6b6b"></div>`,
+    className: '', iconAnchor: [6, 6]
+  });
+  tapMarker = L.marker([lat, lng], { icon: mkTap }).addTo(map)
+    .bindPopup('<b style="color:#ff6b6b">📍 Tujuan dipilih</b>').openPopup();
+
+  /* Reverse geocode — cari nama alamat dari koordinat */
+  toast('📍 Mendapatkan nama lokasi…');
+  let namaLokasi = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  try {
+    if (isOnline) {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=17&addressdetails=1`,
+        { headers: { 'Accept-Language': 'id,en' } }
+      );
+      const data = await res.json();
+      if (data && data.display_name) {
+        /* Ambil nama pendek: nama jalan atau kelurahan */
+        const a = data.address;
+        namaLokasi = a.road || a.neighbourhood || a.suburb || a.village || data.display_name.split(',')[0];
+      }
+    }
+  } catch(e) { /* offline — pakai koordinat saja */ }
+
+  /* Isi field tujuan */
+  document.getElementById('inpTo').value = namaLokasi;
+  toCoord = [lat, lng];
+  simpanSesi();
+  toast(`✅ Tujuan: ${namaLokasi}`);
+});
+
+/* ═══════════════════════════════════════════════════════════════
    3. State
 ═══════════════════════════════════════════════════════════════ */
 let routeCtrl      = null;
@@ -498,11 +713,9 @@ function restoreSesi() {
       document.getElementById('infoStrip').style.display = 'block';
     }
 
-    /* Restore polyline rute langsung dari localStorage (offline-safe) */
+    /* Simpan koordinat rute di memori tapi JANGAN gambar otomatis — user harus pencet Cari Rute */
     if (data.routeCoords && data.routeCoords.length) {
       savedRouteCoords = data.routeCoords;
-      gambarPolylineOffline(savedRouteCoords, data.toCoord);
-      toast('🗺️ Rute dipulihkan dari cache lokal');
     }
 
     if (data.isGPSMode) {
@@ -1002,8 +1215,12 @@ tileLayerOffline.createTile = function(coords, done) {
    12. Reset Semua
 ═══════════════════════════════════════════════════════════════ */
 function resetSemua() {
-  if (routeCtrl)  { map.removeControl(routeCtrl); routeCtrl = null; }
-  if (gpsMarker)  { map.removeLayer(gpsMarker);   gpsMarker = null; }
+  if (routeCtrl)       { map.removeControl(routeCtrl); routeCtrl = null; }
+  if (gpsMarker)       { map.removeLayer(gpsMarker);   gpsMarker = null; }
+  if (tapMarker)       { map.removeLayer(tapMarker);   tapMarker = null; }
+  if (offlinePolyline)   { map.removeLayer(offlinePolyline);   offlinePolyline = null; }
+  if (offlineMarkerFrom) { map.removeLayer(offlineMarkerFrom); offlineMarkerFrom = null; }
+  if (offlineMarkerTo)   { map.removeLayer(offlineMarkerTo);   offlineMarkerTo = null; }
   if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
 
   fromCoord = null; toCoord = null; lastReRoutePos = null; isGPSMode = false; savedRouteCoords = [];
@@ -1139,6 +1356,312 @@ function selesaiTracking() {
 function tutupStat() {
   document.getElementById('statOverlay').classList.remove('on');
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   VIRTUAL GPS JOYSTICK — simulasi pergerakan GPS
+═══════════════════════════════════════════════════════════════ */
+let joyAktif    = false;
+let joyInterval = null;
+let joyDx = 0, joyDy = 0;   // arah gerak dari joystick analog (-1..1)
+let joyDpad = { u:0, d:0, l:0, r:0 }; // D-pad state
+
+/* ── Posisi awal: pakai fromCoord kalau ada, fallback ke pusat peta ── */
+function joyGetPos() {
+  if (fromCoord) return [...fromCoord];
+  const c = map.getCenter();
+  return [c.lat, c.lng];
+}
+
+function toggleJoystick() {
+  joyAktif = !joyAktif;
+  document.getElementById('joystick-panel').classList.toggle('aktif', joyAktif);
+  document.getElementById('btn-joy-toggle').classList.toggle('aktif', joyAktif);
+
+  if (joyAktif) {
+    /* Pastikan ada fromCoord untuk digerakkan */
+    if (!fromCoord) {
+      const c = map.getCenter();
+      fromCoord = [c.lat, c.lng];
+    }
+
+    /* Buat/update marker GPS kalau belum ada */
+    if (!gpsMarker) {
+      const gpsIcon = L.divIcon({
+        html: `<div class="gps-dot"></div>`,
+        className: '', iconAnchor: [8,8]
+      });
+      gpsMarker = L.marker(fromCoord, { icon: gpsIcon, zIndexOffset: 1000 })
+                   .addTo(map)
+                   .bindPopup('<b style="color:#3b9eff">📍 GPS Virtual</b>');
+    }
+
+    /* Aktifkan trackBar & bearing — sama kayak GPS asli */
+    isGPSMode = true;
+    document.getElementById('trackBar').classList.add('aktif');
+    document.getElementById('bearingStrip').style.display = '';
+    if (toCoord) updateBearing(fromCoord);
+
+    /* Tampilkan GPS strip */
+    tampilGPSStrip(fromCoord[0], fromCoord[1]);
+
+    /* Mulai loop pergerakan 100ms */
+    joyInterval = setInterval(joyStep, 100);
+    toast('🕹️ GPS Virtual aktif — gerakkan joystick!');
+  } else {
+    clearInterval(joyInterval);
+    joyInterval = null;
+    joyDx = 0; joyDy = 0;
+    toast('🕹️ GPS Virtual nonaktif');
+  }
+}
+
+function joyStep() {
+  if (!fromCoord) return;
+
+  const speed  = parseInt(document.getElementById('joy-speed').value); // m/s
+  const dt     = 0.1; // detik per step
+  const dMeter = speed * dt;
+
+  /* Konversi meter → derajat */
+  const dLat = dMeter / 111320;
+  const dLng = dMeter / (111320 * Math.cos(fromCoord[0] * Math.PI / 180));
+
+  /* Gabungkan input analog + d-pad */
+  let dx = joyDx + (joyDpad.r - joyDpad.l);
+  let dy = joyDy + (joyDpad.u - joyDpad.d);
+
+  /* Normalisasi supaya diagonal tidak lebih cepat */
+  const mag = Math.sqrt(dx*dx + dy*dy);
+  if (mag > 1) { dx /= mag; dy /= mag; }
+
+  if (Math.abs(dx) < 0.05 && Math.abs(dy) < 0.05) return; // diam
+
+  const newLat = fromCoord[0] + dy * dLat;
+  const newLng = fromCoord[1] + dx * dLng;
+  const ll = L.latLng(newLat, newLng);
+
+  /* Update marker & state */
+  fromCoord = [newLat, newLng];
+  gpsMarker.setLatLng(ll);
+  map.panTo(ll, { animate: true, duration: 0.2 });
+  tampilGPSStrip(newLat, newLng);
+  updateBearing([newLat, newLng]);
+  simpanSesi();
+
+  /* Catat titik kalau tracking aktif */
+  if (trackingAktif) {
+    trackGPSPoints.push([newLat, newLng]);
+    if (trackPosLast) trackJarakTotal += hitungJarak(trackPosLast, [newLat, newLng]);
+    trackPosLast = [newLat, newLng];
+  }
+
+  /* Update live distance & proximity */
+  if (toCoord) {
+    const sisa = hitungJarak([newLat, newLng], toCoord);
+    updateLiveDist(sisa);
+    cekProximity(sisa);
+
+    /* Auto re-route (online saja) */
+    const jarakDariReRoute = lastReRoutePos ? hitungJarak(lastReRoutePos, [newLat, newLng]) : Infinity;
+    if (isOnline && jarakDariReRoute >= REROUTE_DIST && sisa > 50) {
+      lastReRoutePos = [newLat, newLng];
+      gambarRute([newLat, newLng], toCoord, true);
+    }
+  }
+}
+
+/* ─── Analog joystick drag ─────────────────────────────────── */
+(function initJoyAnalog() {
+  const zone = document.getElementById('joystick-zone');
+  const knob = document.getElementById('joystick-knob');
+  const R    = 46; // radius max knob dari tengah
+
+  let dragging = false, cx = 0, cy = 0;
+
+  function getCenter() {
+    const r = zone.getBoundingClientRect();
+    return { x: r.left + r.width/2, y: r.top + r.height/2 };
+  }
+
+  function moveKnob(clientX, clientY) {
+    const c = getCenter();
+    let dx = clientX - c.x;
+    let dy = clientY - c.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > R) { dx *= R/dist; dy *= R/dist; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    joyDx =  dx / R;
+    joyDy = -dy / R; // layar Y terbalik dari lat
+  }
+
+  function resetKnob() {
+    knob.style.transition = 'transform .2s';
+    knob.style.transform  = 'translate(-50%,-50%)';
+    setTimeout(() => { knob.style.transition = 'none'; }, 200);
+    joyDx = 0; joyDy = 0;
+  }
+
+  /* Touch */
+  zone.addEventListener('touchstart', e => {
+    e.preventDefault(); dragging = true;
+    moveKnob(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
+  window.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    moveKnob(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
+  window.addEventListener('touchend', () => { if (dragging) { dragging = false; resetKnob(); } });
+
+  /* Mouse */
+  zone.addEventListener('mousedown', e => { dragging = true; moveKnob(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => { if (dragging) moveKnob(e.clientX, e.clientY); });
+  window.addEventListener('mouseup',   () => { if (dragging) { dragging = false; resetKnob(); } });
+})();
+
+/* ─── D-Pad buttons ─────────────────────────────────────────── */
+(function initDpad() {
+  const map2 = { 'joy-u': 'u', 'joy-d': 'd', 'joy-l': 'l', 'joy-r': 'r' };
+  Object.entries(map2).forEach(([id, dir]) => {
+    const btn = document.getElementById(id);
+
+    const press = () => {
+      joyDpad[dir] = 1; btn.classList.add('pressed');
+    };
+    const release = () => {
+      joyDpad[dir] = 0; btn.classList.remove('pressed');
+    };
+
+    btn.addEventListener('mousedown',  press);
+    btn.addEventListener('mouseup',    release);
+    btn.addEventListener('mouseleave', release);
+    btn.addEventListener('touchstart', e => { e.preventDefault(); press(); }, { passive:false });
+    btn.addEventListener('touchend',   release);
+  });
+})();
+
+/* ─── Slider kecepatan ──────────────────────────────────────── */
+document.getElementById('joy-speed').addEventListener('input', function() {
+  document.getElementById('joy-speed-val').textContent = this.value + ' m/s';
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOKMARK — simpan lokasi favorit ke localStorage
+═══════════════════════════════════════════════════════════════ */
+const BM_KEY = 'navmap_bookmarks';
+
+function bmLoad() {
+  try { return JSON.parse(localStorage.getItem(BM_KEY)) || []; } catch { return []; }
+}
+function bmSave(list) {
+  try { localStorage.setItem(BM_KEY, JSON.stringify(list)); } catch {}
+}
+
+function renderBookmarks() {
+  const list = bmLoad();
+  const el   = document.getElementById('bm-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="bm-empty">Belum ada bookmark</div>';
+    return;
+  }
+  el.innerHTML = list.map((bm, i) => `
+    <div class="bm-item">
+      <span class="bm-name" onclick="pakaiBookmark(${i})">⭐ ${bm.nama}</span>
+      <span class="bm-del" onclick="hapusBookmark(${i})">✕</span>
+    </div>`).join('');
+}
+
+function simpanBookmark() {
+  if (!toCoord)   { toast('⚠️ Tentukan tujuan dulu!'); return; }
+  if (!fromCoord) { toast('⚠️ Tentukan titik asal dulu!'); return; }
+  const inp  = document.getElementById('bm-inp');
+  const nama = inp.value.trim()
+    || (document.getElementById('inpFrom').value.trim() + ' → ' + document.getElementById('inpTo').value.trim())
+    || `Rute ${Date.now()}`;
+  const list = bmLoad();
+  list.push({
+    nama,
+    fromCoord : fromCoord,
+    toCoord   : toCoord,
+    fromAlamat: document.getElementById('inpFrom').value.trim(),
+    toAlamat  : document.getElementById('inpTo').value.trim(),
+    routeCoords: savedRouteCoords.length ? savedRouteCoords : []
+  });
+  bmSave(list);
+  inp.value = '';
+  renderBookmarks();
+  toast(`⭐ Rute "${nama}" disimpan!`);
+}
+
+function hapusBookmark(i) {
+  const list = bmLoad();
+  const nama = list[i].nama;
+  list.splice(i, 1);
+  bmSave(list);
+  renderBookmarks();
+  toast(`🗑 Bookmark "${nama}" dihapus`);
+}
+
+function pakaiBookmark(i) {
+  const bm = bmLoad()[i];
+  if (!bm) return;
+
+  /* Restore state */
+  fromCoord        = bm.fromCoord;
+  toCoord          = bm.toCoord;
+  savedRouteCoords = bm.routeCoords || [];
+
+  document.getElementById('inpFrom').value = bm.fromAlamat || '';
+  document.getElementById('inpTo').value   = bm.toAlamat   || '';
+
+  hapusSesi(); /* jangan auto-restore saat refresh */
+
+  /* Update / buat marker GPS di posisi asal */
+  const llFrom = L.latLng(fromCoord[0], fromCoord[1]);
+  if (gpsMarker) {
+    gpsMarker.setLatLng(llFrom);
+  } else {
+    const gpsIcon = L.divIcon({
+      html: `<div class="gps-dot"></div>`,
+      className: '', iconAnchor: [8,8]
+    });
+    gpsMarker = L.marker(llFrom, { icon: gpsIcon, zIndexOffset: 1000 })
+      .addTo(map)
+      .bindPopup('<b style="color:#3b9eff">📍 Posisi Asal</b>');
+  }
+
+  tampilGPSStrip(fromCoord[0], fromCoord[1]);
+  updateBearing(fromCoord);
+  document.getElementById('bearingStrip').style.display = '';
+  document.getElementById('trackBar').classList.add('aktif');
+
+  /* Gambar rute */
+  if (isOnline) {
+    gambarRute(fromCoord, toCoord);
+  } else if (savedRouteCoords.length) {
+    gambarPolylineOffline(savedRouteCoords, toCoord);
+    const sisa = hitungJarak(fromCoord, toCoord);
+    updateLiveDist(sisa);
+    document.getElementById('infoStrip').style.display = 'block';
+  }
+
+  map.flyTo(fromCoord, 15);
+  toast(`📍 Rute "${bm.nama}" dipulihkan`);
+
+  /* Tutup panel */
+  document.getElementById('bm-body').classList.remove('open');
+  document.getElementById('bm-chevron').textContent = '▼';
+}
+
+function toggleBmPanel() {
+  const body = document.getElementById('bm-body');
+  const chev = document.getElementById('bm-chevron');
+  const open = body.classList.toggle('open');
+  chev.textContent = open ? '▲' : '▼';
+  if (open) renderBookmarks();
+}
+
+/* Render saat load */
+window.addEventListener('load', () => { renderBookmarks(); });
 
 </script>
 </body>
