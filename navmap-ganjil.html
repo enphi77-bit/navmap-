@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, viewport-fit=cover" />
+  <title>NavMap – 2302041199</title>
+
+  <!-- ① Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- ② Leaflet Routing Machine CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <!-- ③ Leaflet Control Geocoder CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.css" />
+  <!-- ④ Framework7 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/framework7@8.3.3/css/framework7.bundle.min.css" />
+
+  <style>
+    /* ─── Reset & base ─────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0b0f1e; }
+
+    /* ─── Framework7 overrides ─────────────────────────── */
+    .page-content  { background: #0b0f1e !important; padding-top: 0 !important; overflow-y: auto !important; }
+    .navbar        { background: #0b0f1e !important; border-bottom: 1px solid rgba(99,179,255,.2); }
+    .navbar-inner  { justify-content: center; flex-direction: column; align-items: flex-start; padding: 8px 16px; }
+    .nav-title     { font-size: 17px; font-weight: 800; background: linear-gradient(90deg,#3b9eff,#00e0b0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .nav-sub       { font-size: 11px; color: rgba(255,255,255,.35); letter-spacing: .8px; margin-top: 1px; }
+
+    /* ─── Card form ─────────────────────────────────────── */
+    .card-form {
+      margin: 12px 14px 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(59,158,255,.25);
+      border-radius: 18px;
+      padding: 14px 14px 10px;
+    }
+    .field-label {
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 1.2px; color: rgba(255,255,255,.4);
+      display: flex; align-items: center; gap: 7px;
+      margin-bottom: 6px;
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .dot-a { background: #3b9eff; box-shadow: 0 0 7px #3b9eff; }
+    .dot-b { background: #00e0b0; box-shadow: 0 0 7px #00e0b0; }
+
+    .field-input {
+      width: 100%; padding: 11px 13px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 11px;
+      color: #fff; font-size: 14px; outline: none;
+      transition: border-color .2s;
+    }
+    .field-input:focus  { border-color: #3b9eff; }
+    .field-input::placeholder { color: rgba(255,255,255,.28); }
+
+    .connector { width: 2px; height: 14px; background: linear-gradient(#3b9eff,#00e0b0); margin: 5px 0 5px 4px; border-radius: 2px; }
+
+    /* ─── Button row ─────────────────────────────────────── */
+    .btn-row { display: flex; gap: 9px; margin: 0 14px 10px; }
+
+    .btn-primary {
+      flex: 1; padding: 13px;
+      background: linear-gradient(135deg,#3b9eff,#005fcc);
+      color: #fff; font-weight: 700; font-size: 14px;
+      border: none; border-radius: 13px; cursor: pointer;
+      box-shadow: 0 4px 18px rgba(59,158,255,.35);
+      transition: transform .15s, box-shadow .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(59,158,255,.2); }
+
+    .btn-icon {
+      padding: 13px 15px; border-radius: 13px; font-size: 18px;
+      cursor: pointer; border: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .15s;
+    }
+    .btn-gps   { background: rgba(0,224,176,.13); color: #00e0b0; border: 1px solid rgba(0,224,176,.35); }
+    .btn-reset { background: rgba(255,255,255,.07); color: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.13); }
+    .btn-icon:active { opacity: .7; }
+
+    /* ─── Info strip ─────────────────────────────────────── */
+    .info-strip {
+      display: none;
+      margin: 0 14px 10px;
+      padding: 11px 14px;
+      background: rgba(0,224,176,.08);
+      border: 1px solid rgba(0,224,176,.28);
+      border-radius: 13px;
+      color: #00e0b0; font-size: 13px; font-weight: 600;
+    }
+    .info-strip span { color: #fff; font-weight: 400; }
+
+    /* ─── GPS status ─────────────────────────────────────── */
+    .gps-strip {
+      display: none;
+      margin: 0 14px 10px;
+      padding: 9px 14px;
+      background: rgba(59,158,255,.08);
+      border: 1px solid rgba(59,158,255,.25);
+      border-radius: 12px;
+      color: #3b9eff; font-size: 12px;
+    }
+
+    /* ─── Map container ──────────────────────────────────── */
+    #map {
+      margin: 0 14px 14px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.07);
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      /* height = viewport minus topbar+form+buttons+info */
+      height: calc(100dvh - 290px);
+      min-height: 260px;
+    }
+
+    /* ─── Live GPS dot ───────────────────────────────────── */
+    .gps-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #3b9eff; border: 3px solid #fff;
+      box-shadow: 0 0 0 4px rgba(59,158,255,.35);
+      animation: ripple 2s infinite;
+    }
+    @keyframes ripple {
+      0%,100% { box-shadow: 0 0 0 4px rgba(59,158,255,.35); }
+      50%      { box-shadow: 0 0 0 10px rgba(59,158,255,0); }
+    }
+
+    /* ─── Routing panel hide (bawaan LRM terlalu besar) ──── */
+    .leaflet-routing-container { display: none !important; }
+
+    /* ─── Geocoder suggestions z-index fix ───────────────── */
+    .leaflet-routing-geocoder-result {
+      z-index: 9999 !important;
+      background: #1a1f30;
+      border: 1px solid rgba(59,158,255,.3);
+      border-radius: 10px; overflow: hidden;
+    }
+    .leaflet-routing-geocoder-result tr td { color: #fff; padding: 8px 12px; font-size: 13px; }
+    .leaflet-routing-geocoder-result tr:hover td { background: rgba(59,158,255,.2); cursor: pointer; }
+
+    /* ─── Toast ──────────────────────────────────────────── */
+    .toast-box {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(59,158,255,.95); color: #fff;
+      padding: 10px 22px; border-radius: 100px;
+      font-size: 13px; font-weight: 600; letter-spacing: .3px;
+      z-index: 99999; opacity: 0; transition: opacity .3s;
+      white-space: nowrap; pointer-events: none;
+    }
+    .toast-box.on { opacity: 1; }
+
+    /* ─── Proximity / arrival strip ─────────────────────── */
+    .prox-strip {
+      display: none;
+      margin: 0 14px 10px;
+      padding: 11px 14px;
+      border-radius: 13px;
+      font-size: 13px; font-weight: 600;
+      transition: background .3s, border-color .3s;
+    }
+    .prox-strip.dekat {
+      background: rgba(255,180,0,.1);
+      border: 1px solid rgba(255,180,0,.4);
+      color: #ffb400;
+    }
+    .prox-strip.sampai {
+      background: rgba(0,224,176,.15);
+      border: 1px solid rgba(0,224,176,.5);
+      color: #00e0b0;
+      animation: pulse-green 1.2s infinite;
+    }
+    @keyframes pulse-green {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,224,176,.3); }
+      50%      { box-shadow: 0 0 0 8px rgba(0,224,176,0); }
+    }
+
+    /* ─── Realtime distance strip ───────────────────────── */
+    .live-dist {
+      display: none;
+      margin: 0 14px 10px;
+      padding: 9px 14px;
+      background: rgba(59,158,255,.06);
+      border: 1px solid rgba(59,158,255,.2);
+      border-radius: 12px;
+      color: rgba(255,255,255,.7); font-size: 12px;
+    }
+    .live-dist .ld-val { color: #fff; font-weight: 700; font-size: 14px; }
+
+    .nim-badge { text-align:center; padding: 0 0 18px; color: rgba(255,255,255,.15); font-size: 11px; letter-spacing: 1px; }
+    .nim-badge b { color: rgba(59,158,255,.4); }
+
+    /* ─── Bearing strip ──────────────────────────────────── */
+    .bearing-strip {
+      display: none;
+      margin: 0 14px 10px;
+      padding: 10px 14px;
+      background: rgba(255,180,0,.07);
+      border: 1px solid rgba(255,180,0,.3);
+      border-radius: 12px;
+      color: rgba(255,255,255,.7); font-size: 12px;
+      align-items: center; gap: 12px;
+    }
+    .bearing-strip.aktif { display: flex; }
+    .bearing-compass {
+      font-size: 26px;
+      display: inline-block;
+      transition: transform .4s ease;
+      line-height: 1;
+    }
+    .bearing-val { color: #ffb400; font-weight: 800; font-size: 18px; }
+    .bearing-dir { color: rgba(255,255,255,.6); font-size: 11px; margin-top: 2px; }
+
+    /* ─── Tracking bar ───────────────────────────────────── */
+    .track-bar {
+      display: none;
+      margin: 0 14px 10px;
+      padding: 10px 14px;
+      background: rgba(0,224,176,.06);
+      border: 1px solid rgba(0,224,176,.25);
+      border-radius: 12px;
+      align-items: center; gap: 8px;
+    }
+    .track-bar.aktif { display: flex; }
+    .btn-track {
+      padding: 8px 16px; border-radius: 10px; font-size: 13px;
+      font-weight: 700; cursor: pointer; border: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-track-start { background: rgba(0,224,176,.2); color: #00e0b0; border: 1px solid rgba(0,224,176,.4); }
+    .btn-track-stop  { background: rgba(255,100,100,.2); color: #ff6464; border: 1px solid rgba(255,100,100,.4); }
+    .track-timer     { color: rgba(255,255,255,.6); font-size: 12px; flex: 1; text-align: right; }
+
+    /* ─── Statistik modal ────────────────────────────────── */
+    .stat-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.75); z-index: 99998;
+      justify-content: center; align-items: flex-end;
+    }
+    .stat-overlay.on { display: flex; }
+    .stat-card {
+      background: #12172b;
+      border: 1px solid rgba(0,224,176,.3);
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px 36px;
+      width: 100%; max-width: 480px;
+    }
+    .stat-title { color: #00e0b0; font-size: 16px; font-weight: 800; margin-bottom: 16px; text-align: center; }
+    .stat-row {
+      display: flex; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: 13px; color: rgba(255,255,255,.6);
+    }
+    .stat-row:last-of-type { border-bottom: none; }
+    .stat-row b { color: #fff; font-size: 15px; }
+    .btn-stat-close {
+      margin-top: 16px; width: 100%; padding: 13px;
+      background: linear-gradient(135deg,#3b9eff,#005fcc);
+      color: #fff; font-weight: 700; font-size: 14px;
+      border: none; border-radius: 13px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     Framework7 App Shell
+════════════════════════════════════════════ -->
+<div id="app">
+  <div class="view view-main view-init safe-areas">
+    <div class="page">
+
+      <!-- Navbar -->
+      <div class="navbar">
+        <div class="navbar-bg"></div>
+        <div class="navbar-inner">
+          <div class="nav-title">🗺 NavMap</div>
+          <div class="nav-sub">2302041199 · Framework7 + Leaflet &nbsp;<span id="onlineBadge" style="font-weight:700">🟢 Online</span></div>
+        </div>
+      </div>
+
+      <div class="page-content" style="padding-top:56px">
+
+        <!-- Form Card -->
+        <div class="card-form">
+          <div class="field-label"><span class="dot dot-a"></span>Titik Asal</div>
+          <input id="inpFrom" class="field-input" type="text"
+                 placeholder="Ketik alamat asal …" autocomplete="off" />
+
+          <div class="connector"></div>
+
+          <div class="field-label"><span class="dot dot-b"></span>Titik Tujuan</div>
+          <input id="inpTo" class="field-input" type="text"
+                 placeholder="Ketik alamat tujuan …" autocomplete="off" />
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+          <button class="btn-primary" onclick="cariRute()">🔍 Cari Rute</button>
+          <button class="btn-icon btn-gps"   onclick="pakaiGPS()"   title="Pakai lokasimu">📍</button>
+          <button class="btn-icon btn-reset" onclick="resetSemua()" title="Reset">🔄</button>
+        </div>
+
+        <!-- Tombol Download Map — muncul setelah rute ditemukan -->
+        <div id="dlRow" style="display:none; margin: 0 14px 10px;">
+          <button class="btn-primary" id="btnDl" onclick="downloadMapArea()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
+            ⬇️ Download Map Area Rute
+          </button>
+        </div>
+
+        <!-- Progress download -->
+        <div id="dlProgress" style="display:none; margin:0 14px 10px; padding:10px 14px;
+             background:rgba(124,58,237,.1); border:1px solid rgba(124,58,237,.35);
+             border-radius:12px; color:#a78bfa; font-size:12px;">
+          <div id="dlText">⏳ Menyiapkan download…</div>
+          <div style="margin-top:6px; background:rgba(255,255,255,.1); border-radius:100px; height:6px; overflow:hidden;">
+            <div id="dlBar" style="height:100%; width:0%; background:linear-gradient(90deg,#7c3aed,#3b9eff); border-radius:100px; transition:width .3s;"></div>
+          </div>
+        </div>
+
+        <!-- GPS status -->
+        <div class="gps-strip" id="gpsStrip">📡 <span id="gpsText">Mendeteksi GPS…</span></div>
+
+        <!-- Route info (total) -->
+        <div class="info-strip" id="infoStrip">
+          📏 Jarak: <span id="infoDist">-</span> &nbsp;|&nbsp; ⏱ Estimasi: <span id="infoTime">-</span>
+        </div>
+
+        <!-- Realtime live distance -->
+        <div class="live-dist" id="liveDist">
+          📍 Sisa: <span class="ld-val" id="ldSisa">-</span> &nbsp;|&nbsp; ⏱ ETA: <span class="ld-val" id="ldEta">-</span>
+        </div>
+
+        <!-- Proximity / arrival alert -->
+        <div class="prox-strip" id="proxStrip"></div>
+
+        <!-- Bearing strip -->
+        <div class="bearing-strip" id="bearingStrip" style="display:none">
+          <span class="bearing-compass" id="bearingArrow">🧭</span>
+          <div>
+            <div><span class="bearing-val" id="bearingDeg">0°</span></div>
+            <div class="bearing-dir" id="bearingDir">Menunggu GPS…</div>
+          </div>
+        </div>
+
+        <!-- Tracking bar -->
+        <div class="track-bar" id="trackBar" style="display:none">
+          <button class="btn-track btn-track-start" id="btnTrackStart" onclick="mulaiTracking()">▶ Mulai</button>
+          <button class="btn-track btn-track-stop"  id="btnTrackStop"  onclick="selesaiTracking()" style="display:none">■ Selesai</button>
+          <span class="track-timer" id="trackTimer">00:00:00</span>
+        </div>
+
+        <!-- MAP -->
+        <div id="map"></div>
+
+        <div class="nim-badge">NIM <b>GANJIL</b> • Offline Tracking • Bearing + Statistik</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Statistik -->
+<div class="stat-overlay" id="statOverlay">
+  <div class="stat-card">
+    <div class="stat-title">📊 Statistik Perjalanan</div>
+    <div class="stat-row">Jam Mulai    <b id="stJamMulai">-</b></div>
+    <div class="stat-row">Jam Selesai  <b id="stJamSelesai">-</b></div>
+    <div class="stat-row">Durasi       <b id="stDurasi">-</b></div>
+    <div class="stat-row">Jarak Aktual <b id="stJarak">-</b></div>
+    <div class="stat-row">Jumlah Titik GPS <b id="stTitik">-</b></div>
+    <button class="btn-stat-close" onclick="tutupStat()">Tutup</button>
+  </div>
+</div>
+
+<div class="toast-box" id="toast"></div>
+
+
+<!-- ════════════════════════════════════════════
+     Scripts  (urutan penting!)
+════════════════════════════════════════════ -->
+
+<!-- ① Leaflet -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- ② Leaflet Routing Machine -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<!-- ③ Leaflet Control Geocoder  (dipakai LRM buat input asal/tujuan) -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.js"></script>
+<!-- ④ Framework7 — WAJIB setelah DOM siap, bukan di <head>
+     Primary: jsDelivr | Fallback: cdnjs -->
+<script src="https://cdn.jsdelivr.net/npm/framework7@8.3.3/js/framework7.bundle.min.js"
+  onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/framework7/8.3.3/js/framework7.bundle.min.js'"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   1. Init Framework7  (fallback guard — app tetap jalan
+      meski F7 gagal load dari CDN)
+═══════════════════════════════════════════════════════════════ */
+let f7app = null;
+if (typeof Framework7 !== 'undefined') {
+  try {
+    f7app = new Framework7({
+      el: '#app', name: 'NavMap',
+      theme: 'ios', darkMode: true,
+      colors: { primary: '#3b9eff' }
+    });
+  } catch(e) { console.warn('F7 init error (non-fatal):', e); }
+} else {
+  console.warn('Framework7 tidak terload dari CDN — app tetap berjalan tanpa F7 UI framework');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2. Init Leaflet Map
+═══════════════════════════════════════════════════════════════ */
+const map = L.map('map', { zoomControl: true, attributionControl: false })
+             .setView([-7.5202, 112.2324], 14);
+
+/* ── Tile Layer — pakai L.tileLayer biasa, override createTile untuk offline ── */
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+const tileLayerOffline = L.tileLayer(TILE_URL, {
+  subdomains: 'abcd',
+  maxZoom: 19,
+  attribution: '© OpenStreetMap · CartoDB'
+}).addTo(map);
+
+/* ── Deteksi online/offline ── */
+let isOnline = navigator.onLine;
+
+function updateOnlineStatus() {
+  isOnline = navigator.onLine;
+  const badge = document.getElementById('onlineBadge');
+  if (badge) {
+    badge.textContent = isOnline ? '🟢 Online' : '🔴 Offline';
+    badge.style.color = isOnline ? '#00e0b0' : '#ff6b6b';
+  }
+  if (!isOnline) toast('📵 Mode Offline — map dari cache lokal');
+}
+
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+L.control.attribution({ prefix: '© OpenStreetMap · CartoDB' }).addTo(map);
+
+/* ═══════════════════════════════════════════════════════════════
+   3. State
+═══════════════════════════════════════════════════════════════ */
+let routeCtrl      = null;
+let gpsMarker      = null;
+let watchId        = null;
+let fromCoord      = null;   // [lat, lng] — titik asal
+let toCoord        = null;   // [lat, lng] — titik tujuan
+let lastReRoutePos = null;   // posisi terakhir saat re-route
+let isGPSMode      = false;  // true = asal dari GPS, bukan ketik manual
+let savedRouteCoords = [];   // koordinat polyline rute — untuk download tile & offline
+const REROUTE_DIST = 30;     // meter — jarak minimum sebelum re-route otomatis
+
+/* ═══════════════════════════════════════════════════════════════
+   4. localStorage — simpan & restore sesi
+═══════════════════════════════════════════════════════════════ */
+const LS_KEY = 'navmap_sesi';
+
+function simpanSesi() {
+  try {
+    const data = {
+      fromTxt      : document.getElementById('inpFrom').value,
+      toTxt        : document.getElementById('inpTo').value,
+      toCoord      : toCoord,
+      isGPSMode    : isGPSMode,
+      routeCoords  : savedRouteCoords,           // ← polyline rute
+      routeInfoDist: document.getElementById('infoDist').textContent,
+      routeInfoTime: document.getElementById('infoTime').textContent
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function hapusSesi() {
+  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+}
+
+function restoreSesi() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data.toTxt || !data.toCoord) return;
+
+    document.getElementById('inpTo').value = data.toTxt;
+    toCoord = data.toCoord;
+
+    /* Restore info jarak & waktu */
+    if (data.routeInfoDist && data.routeInfoTime) {
+      document.getElementById('infoDist').textContent = data.routeInfoDist;
+      document.getElementById('infoTime').textContent = data.routeInfoTime;
+      document.getElementById('infoStrip').style.display = 'block';
+    }
+
+    /* Restore polyline rute langsung dari localStorage (offline-safe) */
+    if (data.routeCoords && data.routeCoords.length) {
+      savedRouteCoords = data.routeCoords;
+      gambarPolylineOffline(savedRouteCoords, data.toCoord);
+      toast('🗺️ Rute dipulihkan dari cache lokal');
+    }
+
+    if (data.isGPSMode) {
+      isGPSMode = true;
+      toast('📡 Memulihkan sesi… menunggu GPS');
+      pakaiGPS(true);
+    } else if (data.fromTxt) {
+      document.getElementById('inpFrom').value = data.fromTxt;
+      if (!data.routeCoords?.length)
+        toast('🔄 Sesi dipulihkan — klik Cari Rute untuk tampilkan lagi');
+    }
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5. Toast helper
+═══════════════════════════════════════════════════════════════ */
+let _toastTimer = null;
+function toast(msg, ms = 2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('on'), ms);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   6. Geocoding (Nominatim)
+═══════════════════════════════════════════════════════════════ */
+async function geocode(query) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'id,en' } });
+  return res.json();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. Hitung jarak 2 titik (Haversine, meter)
+═══════════════════════════════════════════════════════════════ */
+function hitungJarak(a, b) {
+  const R = 6371000;
+  const dLat = (b[0]-a[0]) * Math.PI/180;
+  const dLng = (b[1]-a[1]) * Math.PI/180;
+  const s = Math.sin(dLat/2)**2 +
+            Math.cos(a[0]*Math.PI/180) * Math.cos(b[0]*Math.PI/180) *
+            Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8. Cari & Gambar Rute (dari form)
+═══════════════════════════════════════════════════════════════ */
+async function cariRute() {
+  const fromTxt = document.getElementById('inpFrom').value.trim();
+  const toTxt   = document.getElementById('inpTo').value.trim();
+
+  if (!fromTxt || !toTxt) { toast('⚠️ Isi alamat asal & tujuan dulu!'); return; }
+
+  /* Saat offline — langsung tampilkan dari cache kalau ada */
+  if (!isOnline) {
+    if (savedRouteCoords.length && toCoord) {
+      gambarPolylineOffline(savedRouteCoords, toCoord);
+      toast('📵 Offline — menampilkan rute dari cache');
+    } else {
+      toast('❌ Offline & belum ada rute di cache. Sambungkan internet dulu.');
+    }
+    return;
+  }
+
+  toast('🔍 Mencari koordinat…');
+
+  try {
+    if (!fromCoord) {
+      const r = await geocode(fromTxt);
+      if (!r.length) { toast('❌ Alamat asal tidak ditemukan'); return; }
+      fromCoord = [parseFloat(r[0].lat), parseFloat(r[0].lon)];
+    }
+    const r2 = await geocode(toTxt);
+    if (!r2.length) { toast('❌ Alamat tujuan tidak ditemukan'); return; }
+    toCoord = [parseFloat(r2[0].lat), parseFloat(r2[0].lon)];
+
+    gambarRute(fromCoord, toCoord);
+    simpanSesi();
+  } catch (e) {
+    toast('❌ Gagal geocoding: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   9. Gambar Rute di Peta
+═══════════════════════════════════════════════════════════════ */
+function gambarRute(from, to, silent = false) {
+  /* Saat offline — jangan panggil LRM, tampilkan polyline dari cache */
+  if (!isOnline) {
+    if (savedRouteCoords.length) {
+      gambarPolylineOffline(savedRouteCoords, to);
+      if (!silent) toast('📵 Offline — menampilkan rute dari cache');
+    } else {
+      if (!silent) toast('❌ Tidak ada rute tersimpan di cache');
+    }
+    return;
+  }
+
+  if (routeCtrl) { map.removeControl(routeCtrl); routeCtrl = null; }
+
+  const mkFrom = L.divIcon({
+    html: `<div style="width:13px;height:13px;border-radius:50%;background:#3b9eff;border:3px solid #fff;box-shadow:0 0 10px #3b9eff"></div>`,
+    className: '', iconAnchor: [6,6]
+  });
+  const mkTo = L.divIcon({
+    html: `<div style="width:13px;height:13px;border-radius:50%;background:#00e0b0;border:3px solid #fff;box-shadow:0 0 10px #00e0b0"></div>`,
+    className: '', iconAnchor: [6,6]
+  });
+
+  routeCtrl = L.Routing.control({
+    waypoints: [ L.latLng(from), L.latLng(to) ],
+    routeWhileDragging: false,
+    show: false,
+    addWaypoints: false,
+    fitSelectedRoutes: !silent,   // jangan zoom ulang kalau re-route otomatis
+    createMarker: (i, wp) => L.marker(wp.latLng, { icon: i === 0 ? mkFrom : mkTo }),
+    lineOptions: {
+      styles: [
+        { color: '#3b9eff', opacity: .12, weight: 10 },
+        { color: '#3b9eff', opacity: .9,  weight: 4  }
+      ]
+    },
+    geocoder: L.Control.Geocoder.nominatim()
+  }).addTo(map);
+
+  routeCtrl.on('routesfound', e => {
+    const s   = e.routes[0].summary;
+    const km  = (s.totalDistance / 1000).toFixed(1);
+    const min = Math.round(s.totalTime / 60);
+    document.getElementById('infoDist').textContent = km + ' km';
+    document.getElementById('infoTime').textContent = min + ' menit';
+    document.getElementById('infoStrip').style.display = 'block';
+
+    /* Simpan koordinat rute untuk download tile & restore offline */
+    savedRouteCoords = e.routes[0].coordinates.map(c => [c.lat, c.lng]);
+    simpanSesi(); /* simpan polyline sekarang, bukan cuma toCoord */
+
+    /* Tampilkan tombol download (hanya saat online) */
+    if (isOnline) document.getElementById('dlRow').style.display = 'block';
+
+    if (!silent) toast(`✅ Rute ditemukan · ${km} km · ${min} mnt`);
+  });
+
+  routeCtrl.on('routingerror', () => { if (!silent) toast('❌ Rute tidak ditemukan'); });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   10. Pakai GPS → isi field Asal + mulai live tracking
+       silent=true: langsung rute tanpa toast lebay (untuk restore sesi)
+═══════════════════════════════════════════════════════════════ */
+function pakaiGPS(silent = false) {
+  if (!navigator.geolocation) { toast('GPS tidak didukung browser ini'); return; }
+  if (!silent) toast('📡 Mendapatkan lokasi GPS…');
+  isGPSMode = true;
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    fromCoord = [lat, lng];
+    lastReRoutePos = [lat, lng];
+    document.getElementById('inpFrom').value = `Lokasimu (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+    map.flyTo([lat, lng], 16);
+    tampilGPSStrip(lat, lng);
+    mulaGPSTracking();
+    document.getElementById('trackBar').classList.add('aktif'); /* tampilkan tombol tracking */
+    if (!silent) toast('📍 Lokasi didapat!');
+
+    /* Kalau tujuan sudah ada (restore sesi), langsung gambar rute */
+    if (toCoord) gambarRute(fromCoord, toCoord, silent);
+
+  }, () => toast('❌ Tidak bisa akses GPS. Izinkan lokasi di browser.'));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   11. Live GPS Tracking + Auto Re-Route
+═══════════════════════════════════════════════════════════════ */
+function mulaGPSTracking() {
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); }
+
+  const gpsIcon = L.divIcon({
+    html: `<div class="gps-dot"></div>`,
+    className: '', iconAnchor: [8, 8]
+  });
+
+  watchId = navigator.geolocation.watchPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const ll  = L.latLng(lat, lng);
+
+    /* ── Update / buat marker GPS ── */
+    if (gpsMarker) {
+      gpsMarker.setLatLng(ll);
+    } else {
+      gpsMarker = L.marker(ll, { icon: gpsIcon, zIndexOffset: 1000 })
+                   .addTo(map)
+                   .bindPopup('<b style="color:#3b9eff">📍 Posisi Kamu</b>');
+    }
+
+    /* ── Peta ngikut bergerak ── */
+    map.panTo(ll, { animate: true, duration: 0.5 });
+
+    /* ── Update fromCoord ── */
+    fromCoord = [lat, lng];
+    tampilGPSStrip(lat, lng);
+    simpanSesi();
+
+    /* ── Bearing realtime ke tujuan ── */
+    updateBearing([lat, lng]);
+
+    /* ── Catat titik GPS kalau tracking aktif ── */
+    if (trackingAktif) {
+      trackGPSPoints.push([lat, lng]);
+      if (trackPosLast) {
+        trackJarakTotal += hitungJarak(trackPosLast, [lat, lng]);
+      }
+      trackPosLast = [lat, lng];
+    }
+
+    /* ── Auto Re-Route: kalau sudah ada tujuan & bergerak >REROUTE_DIST meter ── */
+    if (toCoord) {
+      const jarakKeTujuan = hitungJarak([lat, lng], toCoord);
+
+      /* Update live distance & ETA realtime */
+      updateLiveDist(jarakKeTujuan);
+
+      /* Cek proximity — sudah dekat / sudah sampai */
+      cekProximity(jarakKeTujuan);
+
+      /* Re-route kalau sudah bergerak cukup jauh — HANYA saat online */
+      const jarakDariReRoute = lastReRoutePos
+        ? hitungJarak(lastReRoutePos, [lat, lng])
+        : Infinity;
+
+      if (isOnline && jarakDariReRoute >= REROUTE_DIST) {
+        lastReRoutePos = [lat, lng];
+        if (jarakKeTujuan > 50) {   // jangan re-route kalau sudah hampir sampai
+          toast('🔄 Posisi berubah — rute diperbarui');
+          gambarRute([lat, lng], toCoord, true /* silent */);
+        }
+      } else if (!isOnline && jarakDariReRoute >= REROUTE_DIST) {
+        /* Offline: update posisi asal tapi jangan re-route */
+        lastReRoutePos = [lat, lng];
+      }
+    }
+
+  }, () => toast('⚠️ GPS signal lemah'),
+  { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 });
+}
+
+function tampilGPSStrip(lat, lng) {
+  document.getElementById('gpsText').textContent = `Live · ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  document.getElementById('gpsStrip').style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Live Distance & ETA Realtime
+═══════════════════════════════════════════════════════════════ */
+function updateLiveDist(jarakMeter) {
+  const el = document.getElementById('liveDist');
+  const sisaEl = document.getElementById('ldSisa');
+  const etaEl  = document.getElementById('ldEta');
+
+  el.style.display = 'block';
+
+  /* Format jarak */
+  if (jarakMeter >= 1000) {
+    sisaEl.textContent = (jarakMeter / 1000).toFixed(1) + ' km';
+  } else {
+    sisaEl.textContent = Math.round(jarakMeter) + ' m';
+  }
+
+  /* Estimasi waktu sisa — asumsi kecepatan rata-rata 30 km/jam */
+  const menitSisa = Math.round((jarakMeter / 1000) / 30 * 60);
+  if (menitSisa < 1) {
+    etaEl.textContent = '< 1 menit';
+  } else {
+    etaEl.textContent = menitSisa + ' menit';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Proximity Detection — Dekat & Sampai
+═══════════════════════════════════════════════════════════════ */
+let _sudahSampai = false;
+let _sudahNotifDekat = false;
+
+function cekProximity(jarakMeter) {
+  const el = document.getElementById('proxStrip');
+
+  if (jarakMeter <= 30) {
+    /* SUDAH SAMPAI */
+    el.className = 'prox-strip sampai';
+    el.textContent = '✅ Kamu sudah sampai di tujuan!';
+    el.style.display = 'block';
+    if (!_sudahSampai) {
+      _sudahSampai = true;
+      toast('🎉 Sampai di tujuan!', 5000);
+    }
+  } else if (jarakMeter <= 200) {
+    /* SUDAH DEKAT */
+    el.className = 'prox-strip dekat';
+    const meterBulat = Math.round(jarakMeter / 10) * 10;
+    el.textContent = '⚠️ Hampir sampai! Sekitar ' + meterBulat + ' meter lagi';
+    el.style.display = 'block';
+    if (!_sudahNotifDekat) {
+      _sudahNotifDekat = true;
+      toast('⚠️ Hampir sampai! ' + meterBulat + ' meter lagi', 4000);
+    }
+  } else {
+    /* Masih jauh — sembunyikan & reset flag */
+    el.style.display = 'none';
+    _sudahSampai = false;
+    _sudahNotifDekat = false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GAMBAR POLYLINE OFFLINE — tampilkan rute dari cache coords
+   Tidak butuh internet, tidak pakai LRM
+═══════════════════════════════════════════════════════════════ */
+let offlinePolyline   = null;
+let offlineMarkerFrom = null;
+let offlineMarkerTo   = null;
+
+function gambarPolylineOffline(coords, tujuan) {
+  /* Hapus layer lama kalau ada */
+  if (offlinePolyline)   { map.removeLayer(offlinePolyline);   offlinePolyline = null; }
+  if (offlineMarkerFrom) { map.removeLayer(offlineMarkerFrom); offlineMarkerFrom = null; }
+  if (offlineMarkerTo)   { map.removeLayer(offlineMarkerTo);   offlineMarkerTo = null; }
+
+  /* Gambar polyline rute */
+  offlinePolyline = L.polyline(coords, {
+    color: '#3b9eff', weight: 4, opacity: .9
+  }).addTo(map);
+
+  /* Marker tujuan */
+  const mkTo = L.divIcon({
+    html: `<div style="width:13px;height:13px;border-radius:50%;background:#00e0b0;border:3px solid #fff;box-shadow:0 0 10px #00e0b0"></div>`,
+    className: '', iconAnchor: [6,6]
+  });
+  offlineMarkerTo = L.marker(tujuan, { icon: mkTo })
+    .addTo(map)
+    .bindPopup('<b style="color:#00e0b0">🏁 Tujuan</b>');
+
+  /* Fit bounds */
+  map.fitBounds(offlinePolyline.getBounds(), { padding: [20, 20] });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DOWNLOAD MAP — tile sekitar rute disimpan ke IndexedDB
+═══════════════════════════════════════════════════════════════ */
+function getTilesAroundRoute(coords, zoomLevels, bufferDeg) {
+  const tiles = new Set();
+  coords.forEach(([lat, lng]) => {
+    zoomLevels.forEach(z => {
+      /* Hitung range tile dalam buffer */
+      const latMin = lat - bufferDeg, latMax = lat + bufferDeg;
+      const lngMin = lng - bufferDeg, lngMax = lng + bufferDeg;
+      const tMin = latLngToTile(latMax, lngMin, z); // lat max = tile y min
+      const tMax = latLngToTile(latMin, lngMax, z);
+      for (let x = tMin.x; x <= tMax.x; x++) {
+        for (let y = tMin.y; y <= tMax.y; y++) {
+          tiles.add(`${z}/${x}/${y}`);
+        }
+      }
+    });
+  });
+  return [...tiles];
+}
+
+function latLngToTile(lat, lng, z) {
+  const n = Math.pow(2, z);
+  const x = Math.floor((lng + 180) / 360 * n);
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  return { x, y };
+}
+
+function tileUrl(zxy) {
+  const [z, x, y] = zxy.split('/');
+  const subs = 'abcd';
+  const s = subs[Math.floor(Math.random() * subs.length)];
+  return `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`;
+}
+
+async function downloadMapArea() {
+  if (!savedRouteCoords.length) { toast('⚠️ Cari rute dulu!'); return; }
+  if (!isOnline) { toast('❌ Perlu internet untuk download map'); return; }
+
+  const btnDl = document.getElementById('btnDl');
+  const dlProg = document.getElementById('dlProgress');
+  const dlText = document.getElementById('dlText');
+  const dlBar  = document.getElementById('dlBar');
+
+  btnDl.disabled = true;
+  btnDl.textContent = '⏳ Downloading…';
+  dlProg.style.display = 'block';
+
+  /* Zoom 14–17, buffer ~500m ≈ 0.005 derajat */
+  const tiles = getTilesAroundRoute(savedRouteCoords, [14, 15, 16, 17], 0.005);
+  const total = tiles.length;
+  dlText.textContent = `⬇️ Download 0 / ${total} tile…`;
+
+  /* Buka IndexedDB */
+  const db = await openTileDB();
+  let done = 0, gagal = 0;
+
+  for (const zxy of tiles) {
+    try {
+      /* Cek dulu, kalau sudah ada skip */
+      const existing = await dbGet(db, zxy);
+      if (existing) { done++; }
+      else {
+        const url  = tileUrl(zxy);
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const blob = await resp.blob();
+        await dbPut(db, zxy, blob);
+        done++;
+      }
+    } catch { gagal++; done++; }
+
+    const pct = Math.round(done / total * 100);
+    dlBar.style.width = pct + '%';
+    dlText.textContent = `⬇️ Download ${done} / ${total} tile… (${pct}%)`;
+    /* Beri napas browser tiap 20 tile */
+    if (done % 20 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  dlText.textContent = `✅ Selesai! ${total - gagal} tile tersimpan${gagal ? ` · ${gagal} gagal` : ''}`;
+  dlBar.style.width = '100%';
+  dlBar.style.background = '#00e0b0';
+  btnDl.textContent = '✅ Map Sudah Didownload';
+  toast('✅ Map area rute sudah tersimpan offline!', 3500);
+}
+
+/* ── IndexedDB helpers ── */
+let _tileDB = null; // cache koneksi DB
+
+function openTileDB() {
+  if (_tileDB) return Promise.resolve(_tileDB);
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('navmap_tiles', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('tiles');
+    req.onsuccess = e => { _tileDB = e.target.result; res(_tileDB); };
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbGet(db, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('tiles', 'readonly');
+    const r  = tx.objectStore('tiles').get(key);
+    r.onsuccess = () => res(r.result);
+    r.onerror   = () => rej(r.error);
+  });
+}
+function dbPut(db, key, val) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('tiles', 'readwrite');
+    const r  = tx.objectStore('tiles').put(val, key);
+    r.onsuccess = () => res();
+    r.onerror   = () => rej(r.error);
+  });
+}
+
+/* ── Override createTile: serve dari IndexedDB kalau ada, fallback CDN ── */
+const _origCreateTile = tileLayerOffline.createTile.bind(tileLayerOffline);
+tileLayerOffline.createTile = function(coords, done) {
+  const img = document.createElement('img');
+  img.crossOrigin = 'anonymous';
+  const zxy = `${coords.z}/${coords.x}/${coords.y}`;
+
+  openTileDB().then(db => dbGet(db, zxy)).then(blob => {
+    if (blob) {
+      img.src = URL.createObjectURL(blob);
+    } else {
+      const s = 'abcd'[Math.floor(Math.random() * 4)];
+      img.src = `https://${s}.basemaps.cartocdn.com/dark_all/${coords.z}/${coords.x}/${coords.y}.png`;
+    }
+    img.onload  = () => done(null, img);
+    img.onerror = () => done(new Error('tile load error'), img);
+  }).catch(() => {
+    /* DB error — fallback langsung ke CDN */
+    const s = 'abcd'[Math.floor(Math.random() * 4)];
+    img.src = `https://${s}.basemaps.cartocdn.com/dark_all/${coords.z}/${coords.x}/${coords.y}.png`;
+    img.onload  = () => done(null, img);
+    img.onerror = () => done(new Error('tile load error'), img);
+  });
+
+  return img;
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   12. Reset Semua
+═══════════════════════════════════════════════════════════════ */
+function resetSemua() {
+  if (routeCtrl)  { map.removeControl(routeCtrl); routeCtrl = null; }
+  if (gpsMarker)  { map.removeLayer(gpsMarker);   gpsMarker = null; }
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+
+  fromCoord = null; toCoord = null; lastReRoutePos = null; isGPSMode = false; savedRouteCoords = [];
+
+  document.getElementById('inpFrom').value = '';
+  document.getElementById('inpTo').value   = '';
+  document.getElementById('infoStrip').style.display   = 'none';
+  document.getElementById('gpsStrip').style.display    = 'none';
+  document.getElementById('liveDist').style.display    = 'none';
+  document.getElementById('proxStrip').style.display   = 'none';
+  document.getElementById('dlRow').style.display       = 'none';
+  document.getElementById('dlProgress').style.display  = 'none';
+  document.getElementById('dlBar').style.width         = '0%';
+  document.getElementById('dlBar').style.background    = 'linear-gradient(90deg,#7c3aed,#3b9eff)';
+  document.getElementById('btnDl').textContent         = '⬇️ Download Map Area Rute';
+  document.getElementById('btnDl').disabled            = false;
+  document.getElementById('bearingStrip').classList.remove('aktif');
+  document.getElementById('trackBar').classList.remove('aktif');
+  document.getElementById('btnTrackStart').style.display = 'inline-block';
+  document.getElementById('btnTrackStop').style.display  = 'none';
+  document.getElementById('trackTimer').textContent    = '00:00:00';
+  if (trackTimerInt) { clearInterval(trackTimerInt); trackTimerInt = null; }
+  trackingAktif = false; trackGPSPoints = []; trackJarakTotal = 0; trackPosLast = null;
+  _sudahSampai = false; _sudahNotifDekat = false;
+
+  hapusSesi();
+  map.setView([-7.5202, 112.2324], 14);
+  toast('🔄 Direset');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   13. Auto-start: restore sesi ATAU auto GPS jika izin sudah granted
+═══════════════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  restoreSesi();
+  if (!toCoord && navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' })
+      .then(p => {
+        if (p.state === 'granted' && !isGPSMode) mulaGPSTracking();
+      });
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   BEARING / AZIMUTH — arah ke tujuan, realtime, offline
+═══════════════════════════════════════════════════════════════ */
+function hitungBearing(from, to) {
+  const lat1 = from[0] * Math.PI / 180;
+  const lat2 = to[0]   * Math.PI / 180;
+  const dLng = (to[1] - from[1]) * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) -
+            Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  return Math.round(brng);
+}
+
+function arahKompas(deg) {
+  const dirs = ['Utara','Timur Laut','Timur','Tenggara','Selatan','Barat Daya','Barat','Barat Laut'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+function updateBearing(posisi) {
+  if (!toCoord) return;
+  const deg = hitungBearing(posisi, toCoord);
+  document.getElementById('bearingDeg').textContent  = deg + '°';
+  document.getElementById('bearingDir').textContent  = '↗ ' + arahKompas(deg);
+  document.getElementById('bearingArrow').style.transform = `rotate(${deg}deg)`;
+  document.getElementById('bearingStrip').classList.add('aktif');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATISTIK TRACKING — mulai / selesai, semua offline
+═══════════════════════════════════════════════════════════════ */
+let trackingAktif   = false;
+let trackJamMulai   = null;
+let trackTimerInt   = null;
+let trackGPSPoints  = [];
+let trackJarakTotal = 0;
+let trackPosLast    = null;
+
+function mulaiTracking() {
+  trackingAktif   = true;
+  trackJamMulai   = new Date();
+  trackGPSPoints  = [];
+  trackJarakTotal = 0;
+  trackPosLast    = null;
+
+  document.getElementById('btnTrackStart').style.display = 'none';
+  document.getElementById('btnTrackStop').style.display  = 'inline-block';
+
+  /* Timer display */
+  trackTimerInt = setInterval(() => {
+    const detik = Math.floor((Date.now() - trackJamMulai) / 1000);
+    const h = String(Math.floor(detik / 3600)).padStart(2, '0');
+    const m = String(Math.floor((detik % 3600) / 60)).padStart(2, '0');
+    const s = String(detik % 60).padStart(2, '0');
+    document.getElementById('trackTimer').textContent = `${h}:${m}:${s}`;
+  }, 1000);
+
+  toast('▶ Tracking dimulai!');
+}
+
+function selesaiTracking() {
+  if (!trackingAktif) return;
+  trackingAktif = false;
+  clearInterval(trackTimerInt);
+
+  const jamSelesai = new Date();
+  const durDetik   = Math.floor((jamSelesai - trackJamMulai) / 1000);
+  const h = String(Math.floor(durDetik / 3600)).padStart(2,'0');
+  const m = String(Math.floor((durDetik % 3600) / 60)).padStart(2,'0');
+  const s = String(durDetik % 60).padStart(2,'0');
+
+  const fmt = d => d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const jarakStr = trackJarakTotal >= 1000
+    ? (trackJarakTotal / 1000).toFixed(2) + ' km'
+    : Math.round(trackJarakTotal) + ' m';
+
+  document.getElementById('stJamMulai').textContent  = fmt(trackJamMulai);
+  document.getElementById('stJamSelesai').textContent = fmt(jamSelesai);
+  document.getElementById('stDurasi').textContent    = `${h}:${m}:${s}`;
+  document.getElementById('stJarak').textContent     = jarakStr;
+  document.getElementById('stTitik').textContent     = trackGPSPoints.length + ' titik';
+
+  document.getElementById('statOverlay').classList.add('on');
+
+  document.getElementById('btnTrackStart').style.display = 'inline-block';
+  document.getElementById('btnTrackStop').style.display  = 'none';
+  document.getElementById('trackTimer').textContent = '00:00:00';
+}
+
+function tutupStat() {
+  document.getElementById('statOverlay').classList.remove('on');
+}
+
+</script>
+</body>
+</html>
